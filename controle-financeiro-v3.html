@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle Financeiro — Thayne & Junior</title>
+<style>
+:root{
+  --bg:#070d1a;--surface:#0d1628;--card:#121e35;--card2:#192843;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.12);
+  --text:#dce8ff;--muted:rgba(220,232,255,0.45);--hint:rgba(220,232,255,0.22);
+  --green:#00d97e;--red:#ff4f5a;--amber:#ffb020;--blue:#4a9eff;--purple:#a78bfa;
+  --r:10px;--rs:7px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;line-height:1.5;min-height:100vh;}
+.mono{font-family:'SF Mono',Menlo,Consolas,'Courier New',monospace;}
+
+/* ── Header ── */
+.header{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:100;}
+.logo{font-size:13px;font-weight:700;display:flex;align-items:center;gap:7px;letter-spacing:-0.2px;}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;}
+.mnav{display:flex;align-items:center;gap:7px;}
+.mbtn{background:var(--card);border:1px solid var(--border2);color:var(--text);width:26px;height:26px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;}
+.mbtn:hover{background:var(--card2);}
+.mlbl{font-size:12px;font-weight:600;min-width:76px;text-align:center;}
+
+/* ── Tabs ── */
+.tabs{display:flex;border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;background:var(--surface);}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{padding:10px 14px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:all .15s;flex-shrink:0;letter-spacing:0.04em;text-transform:uppercase;}
+.tab.active{color:var(--green);border-bottom-color:var(--green);}
+.tab:hover:not(.active){color:var(--text);}
+
+/* ── Layout ── */
+.content{padding:14px 16px;max-width:700px;}
+.panel{display:none;}.panel.active{display:block;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px;margin-bottom:10px;}
+.card-title{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:11px;font-weight:700;}
+
+/* ── Grid ── */
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+
+/* ── Metric card ── */
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:11px 12px;}
+.metric-lbl{font-size:9px;color:var(--muted);letter-spacing:.04em;margin-bottom:3px;text-transform:uppercase;}
+.metric-val{font-size:17px;font-weight:700;font-family:monospace;}
+
+/* ── Buttons ── */
+.btn{background:var(--card2);border:1px solid var(--border2);color:var(--text);padding:8px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;transition:all .15s;display:inline-flex;align-items:center;gap:6px;}
+.btn:hover{background:var(--card);border-color:var(--border)}
+.btn-g{background:var(--green);color:#000;border-color:var(--green);}
+.btn-g:hover{opacity:0.85;}
+.btn-r{background:var(--red);border-color:var(--red);}
+.btn-b{background:var(--blue);border-color:var(--blue);}
+
+/* ── Forms ── */
+input[type="text"],input[type="number"],input[type="date"],input[type="email"],select,textarea{
+  background:rgba(255,255,255,.06);border:1px solid var(--border2);border-radius:6px;
+  color:var(--text);font-size:13px;padding:8px 10px;font-family:inherit;outline:none;
+  transition:border-color .15s;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);}
+
+/* ── Rows ── */
+.entry-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border2);}
+.entry-row:last-child{border-bottom:none;}
+.entry-check{width:20px;height:20px;border:1.5px solid var(--border2);border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;}
+.entry-check.done{background:var(--green);border-color:var(--green);color:#000;}
+.entry-info{flex:1;min-width:0;}
+.entry-name{font-size:13px;font-weight:600;}
+.entry-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+.entry-val{font-weight:600;font-family:monospace;}
+
+/* ── Modal ── */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(3px);}
+.modal.open{display:flex;}
+.modal-box{background:var(--card);border-radius:var(--r);padding:18px;max-width:90vw;width:420px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 25px rgba(0,0,0,0.5);}
+.modal-title{font-size:14px;font-weight:700;margin-bottom:14px;color:var(--text);}
+.modal-field{margin-bottom:12px;}
+.modal-label{font-size:11px;color:var(--muted);margin-bottom:4px;display:block;text-transform:uppercase;letter-spacing:.04em;font-weight:600;}
+.modal-inp{background:rgba(255,255,255,.07);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:13px;padding:9px 11px;width:100%;outline:none;}
+.modal-inp:focus{border-color:var(--blue);}
+.mbtns{display:flex;gap:8px;margin-top:16px;}
+
+/* ── Colors ── */
+.g{color:var(--green);}.r{color:var(--red);}.a{color:var(--amber);}.b{color:var(--blue);}.mu{color:var(--muted);}
+
+/* ── Mobile Responsive ── */
+@media (max-width:640px){
+  .content{padding:10px 12px;max-width:100%;}
+  .header{padding:10px 12px;}
+  .logo{font-size:12px;}
+  .mlbl{min-width:50px;font-size:10px;}
+  .card{padding:10px 12px;margin-bottom:8px;}
+  .grid2{grid-template-columns:1fr;}
+  .grid3{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;}
+  .tab{padding:8px 10px;font-size:8px;}
+  .metric{padding:8px 10px;}
+  .metric-lbl{font-size:8px;}
+  .metric-val{font-size:13px;}
+  .card-title{font-size:7px;margin-bottom:8px;}
+  .entry-row{gap:6px;padding:6px 0;}
+  .entry-name{font-size:11px;}
+  .entry-sub{font-size:9px;}
+  input[type="text"],input[type="number"],input[type="date"],select{font-size:12px;padding:6px 8px;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo"><span class="dot"></span> Controle Financeiro</div>
+  <div class="mnav">
+    <div class="mbtn" onclick="prevMonth()" title="Mês anterior">‹</div>
+    <div class="mlbl" id="mlbl">—</div>
+    <div class="mbtn" onclick="nextMonth()" title="Próximo mês">›</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('dashboard')">Dashboard</div>
+  <div class="tab" onclick="switchTab('contas')">Contas</div>
+  <div class="tab" onclick="switchTab('receita')">Receita</div>
+  <div class="tab" onclick="switchTab('cartao')">Cartão</div>
+  <div class="tab" onclick="switchTab('emprestimo')">Empréstimo</div>
+  <div class="tab" onclick="switchTab('fundo')">Fundo</div>
+</div>
+
+<div class="content">
+
+<!-- ════ DASHBOARD ════ -->
+<div id="dashboard" class="panel active">
+  <div class="card">
+    <div class="card-title">Resumo do mês</div>
+    <div class="grid3">
+      <div class="metric">
+        <div class="metric-lbl">Receita</div>
+        <div class="metric-val g" id="da-renda">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-lbl">Saídas</div>
+        <div class="metric-val r" id="da-saidas">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-lbl">Sobra</div>
+        <div class="metric-val" id="da-sobra">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Por pessoa</div>
+    <div style="display:grid;gap:10px;">
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--amber);letter-spacing:.06em;margin-bottom:8px">THAYNE</div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Receita</span><span class="mono g" id="da-rt">—</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Saídas</span><span class="mono">R$ 5.195</span></div>
+        <div style="padding:4px 0;border-top:1px solid var(--border2);margin-top:4px;padding-top:6px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700"><span>Sobra</span><span class="mono" id="da-st">—</span></div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--amber);letter-spacing:.06em;margin-bottom:8px">JUNIOR</div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Receita</span><span class="mono g" id="da-rj">—</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Saídas</span><span class="mono">R$ 8.471</span></div>
+        <div style="padding:4px 0;border-top:1px solid var(--border2);margin-top:4px;padding-top:6px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700"><span>Sobra</span><span class="mono" id="da-sj">—</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="dash-alert"></div>
+</div>
+
+<!-- ════ CONTAS ════ -->
+<div id="contas" class="panel">
+  <div class="card">
+    <div class="card-title">Contas da casa</div>
+    <div id="bills-casa"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Contas de Junior</div>
+    <div id="bills-junior"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Contas de Thayne</div>
+    <div id="bills-thayne"></div>
+  </div>
+
+  <div class="card">
+    <button class="btn btn-b" onclick="openAddBillModal()">+ Adicionar conta</button>
+  </div>
+</div>
+
+<!-- ════ RECEITA ════ -->
+<div id="receita" class="panel">
+  <div class="card">
+    <div class="card-title">Renda fixa</div>
+    <div style="font-size:12px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span>Thayne</span><span class="g">R$ 6.000</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span>Junior</span><span class="g">R$ 7.699,13</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid var(--border);padding-top:8px">
+        <span>Total</span><span class="g">R$ 13.699,13</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Renda extra</div>
+    <div id="extra-list"></div>
+    <div style="margin-top:10px">
+      <button class="btn btn-b" onclick="openAddExtraModal()">+ Adicionar entrada</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ CARTÃO ════ -->
+<div id="cartao" class="panel">
+  <div class="card">
+    <div class="card-title">Cartão de crédito</div>
+    <div style="margin-bottom:14px;">
+      <button class="btn btn-b" style="width:100%;justify-content:center;" onclick="openCardSettingsModal()">⚙ Configurar</button>
+    </div>
+    <div class="grid2">
+      <div class="metric">
+        <div class="metric-lbl">Limite</div>
+        <div class="metric-val" id="card-limit">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-lbl">Disponível</div>
+        <div class="metric-val g" id="card-avail">—</div>
+      </div>
+    </div>
+    <div style="margin-top:10px">
+      <div class="metric" style="background:var(--card);border:1px solid var(--border);">
+        <div class="metric-lbl">Gasto este mês</div>
+        <div class="metric-val r" id="card-spent">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Faturas</div>
+    <div id="card-invoices"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Compras — fatura atual</div>
+    <div id="card-purchases"></div>
+    <div style="margin-top:10px">
+      <button class="btn btn-b" onclick="openAddPurchaseModal()">+ Adicionar compra</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ EMPRÉSTIMO ════ -->
+<div id="emprestimo" class="panel">
+  <div class="card">
+    <div class="card-title">Status do empréstimo</div>
+    <div class="grid3">
+      <div class="metric">
+        <div class="metric-lbl">Quitado</div>
+        <div class="metric-val g" id="l-paid-amt">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-lbl">Restante</div>
+        <div class="metric-val a" id="l-rem-amt">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-lbl">Término</div>
+        <div class="metric-val b" id="l-end">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Parcelas (24x R$ 1.575,80)</div>
+    <div id="loan-grid"></div>
+    <div style="display:flex;gap:14px;font-size:10px;color:var(--muted);margin-top:4px;">
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:var(--green);display:inline-block"></span>Paga</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="font-size:11px">✏</span>Edite o valor se mudar com amortização</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Amortizações extra</div>
+    <div id="amort-list"></div>
+    <div style="margin-top:10px">
+      <button class="btn btn-b" onclick="openAddAmortModal()">+ Amortizar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ FUNDO ════ -->
+<div id="fundo" class="panel">
+  <div class="card">
+    <div class="card-title">Saldo</div>
+    <div class="metric" style="background:none;border:none;">
+      <div class="metric-val g" id="f-bal">—</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Meta de 1 mês — <span id="f-b1-lbl">—</span></div>
+    <div style="width:100%;height:8px;background:var(--surface);border-radius:4px;overflow:hidden;">
+      <div id="f-b1" style="height:100%;background:var(--green);transition:width .3s;width:0%"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Meta de 3 meses — <span id="f-b3-lbl">—</span></div>
+    <div style="width:100%;height:8px;background:var(--surface);border-radius:4px;overflow:hidden;">
+      <div id="f-b3" style="height:100%;background:var(--blue);transition:width .3s;width:0%"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Histórico</div>
+    <div id="f-hist"></div>
+    <div style="margin-top:10px">
+      <button class="btn btn-b" onclick="openAddFundModal()">+ Adicionar movimento</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- ════ MODALS ════ -->
+<div id="modal" class="modal">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title"></div>
+    <div id="modal-content"></div>
+    <div class="mbtns">
+      <button class="btn" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-g" onclick="confirmModal()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ── Config ──────────────────────────────────────────────
+const SAL_T = 6000, SAL_J = 7699.13;
+const COSTS_T = 5195, COSTS_J = 8470.80;
+const LOAN_AMT = 1575.80, LOAN_TOTAL = 24, LOAN_SY = 2026, LOAN_SM = 6;
+const LOAN_CONTRACT = LOAN_AMT * LOAN_TOTAL;
+const FUND_1M = 13666, FUND_3M = 40997;
+const MN = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+const now = new Date();
+let vy = now.getFullYear(), vm = now.getMonth()+1;
+
+// Default bills (can be customized)
+const DEFAULT_BILLS = [
+  {id:'aluguel',  lbl:'Aluguel',           amt:4000,    grp:'casa'},
+  {id:'aliment',  lbl:'Alimentação e pets', amt:2500,    grp:'casa'},
+  {id:'internet', lbl:'Internet',           amt:290,     grp:'casa'},
+  {id:'carro',    lbl:'Parcela do carro',   amt:1300,    grp:'casa'},
+  {id:'diarista', lbl:'Diarista',           amt:500,     grp:'casa'},
+  {id:'combus',   lbl:'Combustível',        amt:1200,    grp:'casa'},
+  {id:'pensao',   lbl:'Pensão',             amt:1500,    grp:'junior'},
+  {id:'cextra',   lbl:'Custo extra',        amt:500,     grp:'junior'},
+  {id:'emprst',   lbl:'Empréstimo',         amt:1575.80, grp:'junior'},
+  {id:'terapia',  lbl:'Terapia',            amt:300,     grp:'thayne'},
+];
+
+function mk(y,m){ return `${y}-${String(m).padStart(2,'0')}`; }
+function mlabel(y,m){ return `${MN[m-1]} ${y}`; }
+function fmtR(n){ return 'R$\u00a0'+Math.abs(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtS(n){ return (n<0?'− ':'')+fmtR(n); }
+function todayStr(){ return now.toISOString().slice(0,10); }
+function uid(){ return Math.random().toString(36).slice(2,9); }
+
+// ── Storage ─────────────────────────────────────────────
+async function load(key){ try{ const r=localStorage.getItem(key); return r?JSON.parse(r):null; }catch{return null;} }
+async function save(key,v){ try{ localStorage.setItem(key,JSON.stringify(v)); }catch{} }
+
+// ── Global State ────────────────────────────────────────
+let bills = [...DEFAULT_BILLS];
+let customBills = [];
+let fund = { balance:0, transactions:[] };
+let loanState = { months:{}, amortizations:[] };
+let cardState = { limit:5000, closingDay:5, dueDay:15, invoices:[], purchases:[] };
+let months = {};
+let modalData = null;
+
+// ── Init ─────────────────────────────────────────────────
+async function init(){
+  const cb=await load('fcf3:custom-bills'); if(cb) customBills=cb;
+  const fd=await load('fcf3:fund'); if(fd) fund=fd;
+  const ls=await load('fcf3:loan'); if(ls) loanState=ls;
+  const cs=await load('fcf3:card'); if(cs) cardState=cs;
+  await loadMonth(vy,vm);
+  render();
+}
+
+async function loadMonth(y,m){
+  const k=mk(y,m);
+  if(!months[k]){
+    const d=await load('fcf3:m:'+k);
+    months[k]=d||{bills:{},income:[]};
+  }
+}
+
+function getMD(){ return months[mk(vy,vm)]; }
+function getBills(){ return [...bills,...customBills]; }
+
+// ── Month Navigation ────────────────────────────────────
+function prevMonth(){
+  vm--; if(vm<1){vm=12;vy--;}
+  loadMonth(vy,vm).then(()=>render());
+}
+function nextMonth(){
+  vm++; if(vm>12){vm=1;vy++;}
+  loadMonth(vy,vm).then(()=>render());
+}
+
+// ── Tab Switch ──────────────────────────────────────────
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById(tab).classList.add('active');
+}
+
+// ── Modal ────────────────────────────────────────────────
+function setText(id,text){ const e=document.getElementById(id); if(e) e.textContent=text; }
+function setW(id,w){ const e=document.getElementById(id); if(e) e.style.width=w+'%'; }
+
+function openModal(title,html,onConfirm){
+  modalData=onConfirm;
+  document.getElementById('modal-title').textContent=title;
+  document.getElementById('modal-content').innerHTML=html;
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal(){
+  document.getElementById('modal').classList.remove('open');
+  modalData=null;
+}
+
+function confirmModal(){
+  if(modalData) modalData();
+  closeModal();
+}
+
+// ── Bills ────────────────────────────────────────────────
+function openAddBillModal(){
+  openModal('Adicionar conta',`
+    <div class="modal-field">
+      <label class="modal-label">Descrição</label>
+      <input type="text" id="bill-name" placeholder="Ex: Netflix" class="modal-inp">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Valor (R$)</label>
+      <input type="number" id="bill-amt" placeholder="0.00" min="0" step="0.01" class="modal-inp">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Grupo</label>
+      <select id="bill-grp" class="modal-inp">
+        <option value="casa">Casa</option>
+        <option value="junior">Junior</option>
+        <option value="thayne">Thayne</option>
+      </select>
+    </div>
+  `,async()=>{
+    const name=document.getElementById('bill-name').value.trim();
+    const amt=parseFloat(document.getElementById('bill-amt').value)||0;
+    const grp=document.getElementById('bill-grp').value;
+    if(!name||!amt) return alert('Preencha todos os campos');
+    customBills.push({id:uid(),lbl:name,amt,grp});
+    await save('fcf3:custom-bills',customBills);
+    render();
+  });
+}
+
+function openEditBillModal(billId){
+  const bill=getBills().find(b=>b.id===billId);
+  if(!bill) return;
+  const isBillDefault = bills.some(b => b.id === billId);
+  const isCustom = !isBillDefault;
+  
+  openModal(`Editar: ${bill.lbl}`,`
+    <div class="modal-field">
+      <label class="modal-label">Descrição</label>
+      <input type="text" id="bill-name" value="${bill.lbl}" class="modal-inp">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Valor (R$)</label>
+      <input type="number" id="bill-amt" value="${bill.amt}" min="0" step="0.01" class="modal-inp">
+    </div>
+    ${isCustom?`<div style="margin-top:14px"><button class="btn btn-r" onclick="deleteBillConfirm('${billId}')" style="width:100%;justify-content:center;">🗑 Deletar conta</button></div>`:''}
+  `,async()=>{
+    const name=document.getElementById('bill-name').value.trim();
+    const amt=parseFloat(document.getElementById('bill-amt').value)||0;
+    if(!name||!amt) return alert('Preencha todos os campos');
+    
+    if(isBillDefault){
+      const idx=bills.findIndex(b=>b.id===billId);
+      if(idx>=0) bills[idx]={...bills[idx],lbl:name,amt};
+    }else{
+      const idx=customBills.findIndex(b=>b.id===billId);
+      if(idx>=0) customBills[idx]={...customBills[idx],lbl:name,amt};
+    }
+    await save('fcf3:custom-bills',customBills);
+    render();
+  });
+}
+
+async function deleteBillConfirm(billId){
+  if(!confirm('Tem certeza que quer deletar?')) return;
+  customBills=customBills.filter(b=>b.id!==billId);
+  await save('fcf3:custom-bills',customBills);
+  closeModal();
+  render();
+}
+
+// ── Receipt ──────────────────────────────────────────────
+function openAddExtraModal(){
+  openModal('Adicionar renda extra',`
+    <div class="modal-field">
+      <label class="modal-label">Descrição</label>
+      <input type="text" id="extra-desc" placeholder="Ex: Freelance" class="modal-inp">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Valor (R$)</label>
+      <input type="number" id="extra-amt" min="0" step="0.01" class="modal-inp">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Quem recebeu</label>
+      <select id="extra-person" class="modal-inp">
+        <option value="t">Thayne</option>
+        <option value="j">Junior</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Data</label>
+      <input type="date" id="extra-date" value="${todayStr()}" class="modal-inp">
+    </div>
+  `,async()=>{
+    const desc=document.getElementById('extra-desc').value.trim();
+    const amt=parseFloat(document.getElementById('extra-amt').value)||0;
+    const person=document.getElementById('extra-person').value;
+    const date=document.getElementById('extra-date').value;
+    if(!desc||!amt) return alert('Preencha todos os campos');
+    
+    const md=getMD();
+    md.income.push({id:uid(),desc,amt,person,date});
+    await save('fcf3:m:'+mk(vy,vm),md);
+    render();
+  });
+}
+
+// ── Card ─────────────────────────────────────────────────
+function openCardSettingsModal(){
+  openModal('Configurar cartão',`
+    <div class="modal-field">
+      <label class="modal-label">Limite (R$)</label>
+      <input type="number" id="card-limit-inp" value="${cardState.limit}" min="0" step="0.01" class="modal-inp">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Dia de fechamento</label>
+      <input type="number" id="card-closing" value="${cardState.closingDay}" min="1" max="31" class="modal-inp">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Dia de vencimento</label>
+      <input type="number" id="card-due" value="${cardState.dueDay}" min="1" max="31" class="modal-inp">
+    </div>
+  `,async()=>{
+    cardState.limit=parseFloat(document.getElementById('card-limit-inp').value)||5000;
+    cardState.closingDay=parseInt(document.getElementById('card-closing').value)||5;
+    cardState.dueDay=parseInt(document.getElementById('card-due').value)||15;
+    await save('fcf3:card',cardState);
+    render();
+  });
+}
+
+function openAddPurchaseModal(){
+  openModal('Adicionar compra',`
+    <div class="modal-field">
+      <label class="modal-label">Descrição</label>
+      <input type="text" id="purchase-desc" placeholder="Ex: Supermercado" class="modal-inp">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Valor (R$)</label>
+      <input type="number" id="purchase-amt" min="0" step="0.01" class="modal-inp">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Parcelas</label>
+      <input type="number" id="purchase-inst" value="1" min="1" max="12" class="modal-inp">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Data da compra</label>
+      <input type="date" id="purchase-date" value="${todayStr()}" class="modal-inp">
+    </div>
+  `,async()=>{
+    const desc=document.getElementById('purchase-desc').value.trim();
+    const amt=parseFloat(document.getElementById('purchase-amt').value)||0;
+    const inst=parseInt(document.getElementById('purchase-inst').value)||1;
+    const date=document.getElementById('purchase-date').value;
+    if(!desc||!amt) return alert('Preencha todos os campos');
+    
+    cardState.purchases.push({id:uid(),desc,amt,inst,paidInst:0,startDate:date});
+    await save('fcf3:card',cardState);
+    render();
+  });
+}
+
+// ── Loan ─────────────────────────────────────────────────
+function loanPaidCount(){
+  return Object.keys(loanState.months).filter(k=>loanState.months[k].paid).length;
+}
+
+function loanEndDate(){
+  const paid=loanPaidCount();
+  const rem=LOAN_TOTAL-paid;
+  if(rem<=0) return 'Quitado';
+  let y=LOAN_SY,m=LOAN_SM+paid;
+  while(m>12){m-=12;y++;}
+  return MN[m-1]+'/'+y;
+}
+
+async function setLoanAmt(key,val){
+  if(!loanState.months[key]) loanState.months[key]={paid:false,paidDate:null};
+  loanState.months[key].amt=parseFloat(val)||null;
+  await save('fcf3:loan',loanState);
+  render();
+}
+
+async function setLoanDate(key,val){
+  if(!loanState.months[key]) loanState.months[key]={paid:false,paidDate:null};
+  loanState.months[key].paidDate=val;
+  await save('fcf3:loan',loanState);
+}
+
+async function toggleLoan(key){
+  if(!loanState.months[key]) loanState.months[key]={paid:false,paidDate:null,amt:null};
+  const cur=loanState.months[key];
+  cur.paid=!cur.paid;
+  cur.paidDate=cur.paid?todayStr():null;
+  await save('fcf3:loan',loanState);
+  render();
+}
+
+function openAddAmortModal(){
+  openModal('Amortizar empréstimo',`
+    <div class="modal-field">
+      <label class="modal-label">Valor (R$)</label>
+      <input type="number" id="amort-amt" min="0" step="0.01" class="modal-inp">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Descrição</label>
+      <input type="text" id="amort-desc" placeholder="Ex: Bônus" class="modal-inp">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Data</label>
+      <input type="date" id="amort-date" value="${todayStr()}" class="modal-inp">
+    </div>
+  `,async()=>{
+    const val=parseFloat(document.getElementById('amort-amt').value)||0;
+    const desc=document.getElementById('amort-desc').value.trim();
+    const date=document.getElementById('amort-date').value;
+    if(!val||!desc) return alert('Preencha todos os campos');
+    
+    loanState.amortizations.push({id:uid(),val,desc,date});
+    await save('fcf3:loan',loanState);
+    render();
+  });
+}
+
+async function deleteAmort(id){
+  loanState.amortizations=loanState.amortizations.filter(a=>a.id!==id);
+  await save('fcf3:loan',loanState);
+  render();
+}
+
+// ── Fund ─────────────────────────────────────────────────
+function openAddFundModal(){
+  openModal('Adicionar movimento',`
+    <div class="modal-field">
+      <label class="modal-label">Tipo</label>
+      <select id="fund-type" class="modal-inp">
+        <option value="in">Depósito</option>
+        <option value="out">Saque</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Valor (R$)</label>
+      <input type="number" id="fund-amt" min="0" step="0.01" class="modal-inp">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Descrição</label>
+      <input type="text" id="fund-desc" placeholder="Ex: Reserva" class="modal-inp">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Data</label>
+      <input type="date" id="fund-date" value="${todayStr()}" class="modal-inp">
+    </div>
+  `,async()=>{
+    const type=document.getElementById('fund-type').value;
+    const amt=(parseFloat(document.getElementById('fund-amt').value)||0)*(type==='in'?1:-1);
+    const desc=document.getElementById('fund-desc').value.trim();
+    const date=document.getElementById('fund-date').value;
+    if(!amt||!desc) return alert('Preencha todos os campos');
+    
+    fund.balance+=amt;
+    fund.transactions.push({id:uid(),amt,desc,date});
+    await save('fcf3:fund',fund);
+    render();
+  });
+}
+
+async function deleteFundTx(id){
+  const tx=fund.transactions.find(t=>t.id===id);
+  if(tx){
+    fund.balance-=tx.amt;
+    fund.transactions=fund.transactions.filter(t=>t.id!==id);
+    await save('fcf3:fund',fund);
+    render();
+  }
+}
+
+// ── Render ─────────────────────────────────────────────
+function render(){
+  const md=getMD();
+  document.getElementById('mlbl').textContent=mlabel(vy,vm);
+
+  const allBills=getBills();
+  const totalBillsAmt=allBills.reduce((s,b)=>s+b.amt,0);
+  const inc=md.income||[];
+  const extraInc=inc.reduce((s,e)=>s+e.amt,0);
+  const totalIncome=SAL_T+SAL_J+extraInc;
+  const sobra=totalIncome-totalBillsAmt;
+
+  // Dashboard
+  setText('da-renda',fmtR(totalIncome));
+  setText('da-saidas',fmtR(totalBillsAmt));
+  const sobEl=document.getElementById('da-sobra');
+  if(sobEl){sobEl.textContent=fmtS(sobra);sobEl.className='metric-val '+(sobra>=0?'g':'r');}
+
+  const tBills=allBills.filter(b=>b.grp==='casa').reduce((s,b)=>s+b.amt,0)+COSTS_T;
+  const sobraT=SAL_T-tBills;
+  const stEl=document.getElementById('da-st');
+  if(stEl){stEl.textContent=fmtS(sobraT);stEl.className='mono '+(sobraT>=0?'g':'r');}
+  setText('da-rt',fmtR(SAL_T));
+
+  const jBills=allBills.filter(b=>b.grp==='casa').reduce((s,b)=>s+b.amt,0)+allBills.filter(b=>b.grp==='junior').reduce((s,b)=>s+b.amt,0)+COSTS_J;
+  const sobraJ=SAL_J-jBills;
+  const sjEl=document.getElementById('da-sj');
+  if(sjEl){sjEl.textContent=fmtS(sobraJ);sjEl.className='mono '+(sobraJ>=0?'g':'r');}
+  setText('da-rj',fmtR(SAL_J));
+
+  const dueBills=allBills.filter(b=>!md.bills[b.id]||!md.bills[b.id].paid).reduce((s,b)=>s+b.amt,0);
+  const daEl=document.getElementById('dash-alert');
+  if(daEl) daEl.innerHTML=dueBills>0?`<div style="background:rgba(255,79,90,.1);border:1px solid var(--red);border-radius:var(--r);padding:12px;margin-bottom:10px;color:var(--red);font-size:12px;">⚠ ${fmtR(dueBills)} em contas a pagar</div>`:'';
+
+  // Contas
+  renderBillsGroup('bills-casa','Casa',allBills.filter(b=>b.grp==='casa'),md);
+  renderBillsGroup('bills-junior','Junior',allBills.filter(b=>b.grp==='junior'),md);
+  renderBillsGroup('bills-thayne','Thayne',allBills.filter(b=>b.grp==='thayne'),md);
+
+  // Receita
+  const extraHtml=inc.length===0?'<div style="padding:10px;text-align:center;color:var(--muted);font-size:12px;">Nenhuma entrada extra</div>':
+    inc.map(e=>`<div class="entry-row">
+      <div style="flex:1"><div class="entry-name">${e.desc}</div><div class="entry-sub">${e.date} • ${e.person==='t'?'Thayne':'Junior'}</div></div>
+      <div class="entry-val g">+${fmtR(e.amt)}</div>
+    </div>`).join('');
+  document.getElementById('extra-list').innerHTML=extraHtml;
+
+  // Cartão
+  const spent=cardState.purchases.reduce((s,p)=>s+(p.amt/p.inst)*p.paidInst,0);
+  setText('card-limit',fmtR(cardState.limit));
+  setText('card-avail',fmtR(cardState.limit-spent));
+  setText('card-spent',fmtR(spent));
+  
+  const invHtml=cardState.invoices.length===0?'<div style="font-size:12px;color:var(--muted);padding:10px;text-align:center;">Nenhuma fatura registrada</div>':
+    cardState.invoices.map(inv=>`<div class="entry-row">
+      <div style="flex:1"><div class="entry-name">${inv.status==='paid'?'✓ ':''}${MN[inv.month-1]}</div><div class="entry-sub">Vencimento: ${inv.dueDay}</div></div>
+      <div class="entry-val ${inv.status==='paid'?'g':'r'}">${fmtR(inv.amount)}</div>
+    </div>`).join('');
+  document.getElementById('card-invoices').innerHTML=invHtml;
+
+  const purHtml=cardState.purchases.length===0?'<div style="font-size:12px;color:var(--muted);padding:10px;text-align:center;">Nenhuma compra registrada</div>':
+    cardState.purchases.map(p=>`<div class="entry-row">
+      <div style="flex:1"><div class="entry-name">${p.desc}</div><div class="entry-sub">${p.inst}x • ${p.startDate}</div></div>
+      <div class="entry-val">${fmtR(p.amt)}</div>
+    </div>`).join('');
+  document.getElementById('card-purchases').innerHTML=purHtml;
+
+  // Empréstimo
+  let lPaidAmt=0,lRemAmt=0;
+  for(let i=0;i<LOAN_TOTAL;i++){
+    let y=LOAN_SY,m=LOAN_SM+i; while(m>12){m-=12;y++;}
+    const lk=mk(y,m);
+    const ls=loanState.months[lk]||{};
+    const amt=ls.amt||LOAN_AMT;
+    if(ls.paid) lPaidAmt+=amt; else lRemAmt+=amt;
+  }
+  setText('l-paid-amt',fmtR(lPaidAmt));
+  setText('l-rem-amt',fmtR(lRemAmt));
+  setText('l-end',loanEndDate());
+
+  let loanRows='';
+  for(let i=0;i<LOAN_TOTAL;i++){
+    let y=LOAN_SY,m=LOAN_SM+i; while(m>12){m-=12;y++;}
+    const lk=mk(y,m);
+    const ls=loanState.months[lk]||{};
+    const isCur=y===vy&&m===vm;
+    const amt=(ls.amt!=null?ls.amt:LOAN_AMT).toFixed(2).replace('.',',');
+    loanRows+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);${ls.paid?'opacity:.6':''}">
+      <div class="entry-check ${ls.paid?'done':''}" onclick="toggleLoan('${lk}')">${ls.paid?'✓':''}</div>
+      <div style="flex-shrink:0;min-width:60px">
+        <div style="font-size:12px;font-weight:700;color:${isCur?'var(--blue)':ls.paid?'var(--green)':'var(--text)'};">${MN[m-1]}/${y}</div>
+        <div style="font-size:9px;color:var(--muted)">Parcela ${i+1}</div>
+      </div>
+      <input type="number" value="${ls.amt!=null?ls.amt:LOAN_AMT}" step="0.01" min="0"
+        style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;font-family:monospace;padding:5px 8px;text-align:right;outline:none;"
+        onchange="setLoanAmt('${lk}',this.value)" onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border2)'">
+      <input type="date" value="${ls.paidDate||''}" title="Data de pagamento"
+        style="flex-shrink:0;background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:10px;padding:5px 7px;outline:none;"
+        onchange="setLoanDate('${lk}',this.value)">
+    </div>`;
+  }
+  document.getElementById('loan-grid').innerHTML=loanRows;
+
+  const amortHtml=loanState.amortizations.length===0?'<div style="font-size:12px;color:var(--muted);padding:10px;text-align:center;">Nenhuma amortização extra</div>':
+    loanState.amortizations.map(a=>`<div class="entry-row">
+      <div style="flex:1"><div class="entry-name">${a.desc}</div><div class="entry-sub">${a.date}</div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="entry-val" style="color:var(--purple)">${fmtR(a.val)}</div>
+        <span style="cursor:pointer;color:var(--muted);font-size:16px;" onclick="deleteAmort('${a.id}')">×</span>
+      </div>
+    </div>`).join('');
+  document.getElementById('amort-list').innerHTML=amortHtml;
+
+  // Fundo
+  setText('f-bal',fmtR(fund.balance));
+  const fp1=Math.min(100,Math.round(fund.balance/FUND_1M*100));
+  const fp3=Math.min(100,Math.round(fund.balance/FUND_3M*100));
+  setText('f-b1-lbl',fp1+'% da meta de 1 mês');
+  setW('f-b1',fp1);
+  setText('f-b3-lbl',fp3+'% da meta de 3 meses');
+  setW('f-b3',fp3);
+
+  const fhHtml=fund.transactions.length===0?'<div style="font-size:12px;color:var(--muted);padding:10px;text-align:center;">Nenhuma movimentação</div>':
+    fund.transactions.map(t=>`<div class="entry-row">
+      <div style="flex:1"><div class="entry-name">${t.desc}</div><div class="entry-sub">${t.date}</div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="entry-val ${t.amt>=0?'g':'r'}">${t.amt>=0?'+':'− '}${fmtR(Math.abs(t.amt))}</div>
+        <span style="cursor:pointer;color:var(--muted);font-size:16px;" onclick="deleteFundTx('${t.id}')">×</span>
+      </div>
+    </div>`).join('');
+  document.getElementById('f-hist').innerHTML=fhHtml;
+}
+
+function renderBillsGroup(elId,grpName,bills,md){
+  const html=bills.map(b=>{
+    const state=md.bills[b.id]||{};
+    return `<div class="entry-row">
+      <div class="entry-check ${state.paid?'done':''}" onclick="toggleBill('${mk(vy,vm)}','${b.id}')">${state.paid?'✓':''}</div>
+      <div class="entry-info">
+        <div class="entry-name" style="cursor:pointer;user-select:none;" onclick="openEditBillModal('${b.id}')">${b.lbl}</div>
+        <div class="entry-sub">${state.paidDate?'Pago em '+state.paidDate:''}</div>
+      </div>
+      <div class="entry-val ${state.paid?'mu':'r'}">${fmtR(b.amt)}</div>
+    </div>`;
+  }).join('');
+  document.getElementById(elId).innerHTML=html||'<div style="font-size:12px;color:var(--muted);padding:10px;text-align:center;">Nenhuma conta</div>';
+}
+
+async function toggleBill(key,billId){
+  const md=getMD();
+  if(!md.bills[billId]) md.bills[billId]={paid:false,paidDate:null};
+  md.bills[billId].paid=!md.bills[billId].paid;
+  md.bills[billId].paidDate=md.bills[billId].paid?todayStr():null;
+  await save('fcf3:m:'+key,md);
+  render();
+}
+
+// ── Init ─────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
